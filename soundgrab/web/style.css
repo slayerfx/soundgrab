@@ -786,12 +786,21 @@ input:focus, select:focus {
 .foot {
   max-width: var(--page-w);
   margin: 0 auto;
-  padding: 0 20px 26px;
+  padding: 0 20px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.foot-line {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  font-size: 12px;
-  color: var(--text-faint);
+  align-items: baseline;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
 }
 
 .foot-dir {
@@ -803,6 +812,17 @@ input:focus, select:focus {
   white-space: nowrap;
   max-width: 60%;
 }
+
+.foot-note { line-height: 1.55; max-width: 74ch; }
+
+.foot a {
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 2px;
+}
+
+.foot a:hover { color: var(--accent-text); text-decoration-color: currentColor; }
 
 /* -------------------------------------------------------------- messages */
 
