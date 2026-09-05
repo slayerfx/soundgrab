@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "soundgrab"
+description = "Téléchargeur SoundCloud à interface web locale, propulsé par yt-dlp."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["soundcloud", "yt-dlp", "musique", "downloader", "mp3"]
+classifiers = [
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: French",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "yt-dlp",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "mutagen>=1.45",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+soundgrab = "soundgrab.cli:main"
+
+# La version vit dans le paquet : la dupliquer ici la laisserait diverger.
+[tool.setuptools.dynamic]
+version = { attr = "soundgrab.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["soundgrab*"]
+
+[tool.setuptools.package-data]
+soundgrab = ["web/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "W",    # avertissements
+    "I",    # tri des imports
+    "UP",   # tournures modernisables
+    "B",    # pieges courants (bugbear)
+    "SIM",  # simplifications
+    "C4",   # comprehensions
+    "S",    # ecueils de securite (bandit)
+    "RUF",  # regles propres a ruff
+]
+
+[tool.ruff.lint.per-file-ignores]
+# `assert` est la facon normale d'ecrire un test avec pytest.
+"tests/*" = ["S101"]

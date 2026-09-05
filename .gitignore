@@ -1,0 +1,23 @@
+# Donnees locales : configuration, journal des morceaux deja pris
+data/
+
+# Environnement et ffmpeg embarque
+.venv/
+bin/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# Outillage
+.pytest_cache/
+.ruff_cache/
+
+# Editeurs et systeme
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

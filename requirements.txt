@@ -1,0 +1,9 @@
+# Les dependances font foi dans pyproject.toml. Ce fichier reste la pour la
+# commande reflexe `pip install -r requirements.txt` : il installe le projet en
+# mode editable, dependances comprises, sans risque de divergence entre les deux.
+#
+# Note sur les versions : yt-dlp n'est volontairement pas epingle. Ses
+# extracteurs cassent des que SoundCloud ou YouTube changent quelque chose, et
+# une version figee cesserait de fonctionner sans prevenir. Le reste evolue
+# lentement, un plancher suffit.
+-e .

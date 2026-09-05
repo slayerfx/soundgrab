@@ -1,0 +1,9 @@
+# Normalise les fins de ligne dans le depot : sans cela, une contribution
+# Windows et une contribution Linux produiraient des diffs de fichiers entiers.
+* text=auto eol=lf
+
+# Un .bat doit rester en CRLF : cmd.exe peut mal interpreter les etiquettes
+# et les sauts d'un script en LF.
+*.bat text eol=crlf
+
+*.ico binary

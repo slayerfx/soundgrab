@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Telechargeur SoundCloud a interface web locale.">
+  <title>SoundGrab</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Applique le theme avant le premier rendu : sans ca, un rechargement en
+       theme clair produit un flash sombre le temps que app.js se charge. -->
+  <script>
+    try {
+      const saved = localStorage.getItem('soundgrab.theme');
+      if (saved) document.documentElement.dataset.theme = saved;
+    } catch (_) { /* stockage refuse : on reste sur "auto" */ }
+  </script>
+</head>
+<body>
+
+<!-- Jeu d'icones, reference plus bas par <use href="#i-..."> -->
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="i-track">
+      <path d="M9 18V5.5l11-2V16"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>
+    </g>
+    <g id="i-playlist">
+      <path d="M3 6h11M3 12h11M3 18h7"/>
+      <path d="M19 18.5V8l3 1"/><circle cx="17" cy="18.5" r="2"/>
+    </g>
+    <g id="i-profil">
+      <circle cx="12" cy="8.5" r="3.75"/><path d="M4.75 20a7.25 7.25 0 0 1 14.5 0"/>
+    </g>
+    <g id="i-settings">
+      <circle cx="12" cy="12" r="3.1"/>
+      <path d="M19.1 14.6a1.7 1.7 0 0 0 .35 1.87l.06.07a1.96 1.96 0 1 1-2.77 2.77l-.07-.06a1.7 1.7 0 0 0-2.88 1.21V21a1.96 1.96 0 1 1-3.92 0v-.1a1.7 1.7 0 0 0-2.94-1.16l-.07.06a1.96 1.96 0 1 1-2.77-2.77l.06-.07A1.7 1.7 0 0 0 3.1 14.1H3a1.96 1.96 0 1 1 0-3.92h.1a1.7 1.7 0 0 0 1.16-2.94l-.06-.07a1.96 1.96 0 1 1 2.77-2.77l.07.06a1.7 1.7 0 0 0 2.88-1.21V3a1.96 1.96 0 1 1 3.92 0v.1a1.7 1.7 0 0 0 2.94 1.16l.07-.06a1.96 1.96 0 1 1 2.77 2.77l-.06.07a1.7 1.7 0 0 0 1.21 2.88H21a1.96 1.96 0 1 1 0 3.92h-.1a1.7 1.7 0 0 0-1.56 1.05z"/>
+    </g>
+    <g id="i-sun">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/>
+    </g>
+    <g id="i-moon"><path d="M20.8 13.3A8.6 8.6 0 1 1 10.7 3.2a6.7 6.7 0 0 0 10.1 10.1z"/></g>
+    <g id="i-auto">
+      <rect x="2.5" y="4" width="19" height="12.5" rx="2.2"/><path d="M8.5 20.5h7M12 16.5v4"/>
+    </g>
+    <g id="i-clipboard">
+      <rect x="8.5" y="2.5" width="7" height="4" rx="1.3"/>
+      <path d="M15.5 4.5h2A1.5 1.5 0 0 1 19 6v13.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5V6a1.5 1.5 0 0 1 1.5-1.5h2"/>
+    </g>
+    <g id="i-folder">
+      <path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.1a1.5 1.5 0 0 1 1.2.6l1.05 1.4h7.65A1.5 1.5 0 0 1 20 9.5v9a1.5 1.5 0 0 1-1.5 1.5h-14A1.5 1.5 0 0 1 3 18.5z"/>
+    </g>
+    <g id="i-download"><path d="M12 3.5v11.5M7.5 10.5 12 15l4.5-4.5M4.5 20h15"/></g>
+    <g id="i-close"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></g>
+    <g id="i-alert"><path d="M12 3.4 2.6 20h18.8z"/><path d="M12 10v4.2M12 17.3v.1"/></g>
+    <g id="i-wave"><path d="M2.5 12h1.5M8 6v12M13 3v18M18 7.5v9M22.5 12H21"/></g>
+  </defs>
+</svg>
+
+<header class="appbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="1.5" y="10" width="2.6" height="4" rx="1.3"/>
+      <rect x="6.2" y="6.5" width="2.6" height="11" rx="1.3"/>
+      <rect x="10.9" y="2.5" width="2.6" height="19" rx="1.3"/>
+      <rect x="15.6" y="5.5" width="2.6" height="13" rx="1.3"/>
+      <rect x="20.3" y="9" width="2.6" height="6" rx="1.3"/>
+    </svg>
+    <span class="brand-name">SoundGrab</span>
+    <span class="brand-version" id="version"></span>
+  </div>
+
+  <div class="appbar-status" id="status"></div>
+
+  <div class="appbar-actions">
+    <button class="btn btn-icon" id="theme-toggle" type="button" title="Thème" aria-label="Thème">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use id="theme-icon" href="#i-auto"/></svg>
+    </button>
+    <button class="btn btn-quiet" id="settings-toggle" type="button"
+            aria-expanded="false" aria-controls="settings">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-settings"/></svg>
+      <span>Réglages</span>
+    </button>
+  </div>
+</header>
+
+<main class="page">
+
+  <div class="notice notice-warn" id="ffmpeg-warning" hidden>
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-alert"/></svg>
+    <div>
+      <strong>ffmpeg est introuvable.</strong>
+      Sans lui, ni conversion MP3, ni tags, ni pochettes.
+      Installe-le avec <code>winget install Gyan.FFmpeg</code> puis recharge cette page,
+      ou indique son chemin dans les réglages s'il est déjà présent ailleurs.
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------- saisie -->
+  <section class="composer" id="dropzone" aria-labelledby="composer-label">
+    <h2 class="sr-only" id="composer-label">Nouveau téléchargement</h2>
+    <textarea id="url-input" rows="3" spellcheck="false" autocomplete="off"
+      aria-label="URL SoundCloud"
+      placeholder="Colle une URL SoundCloud — morceau, playlist, likes ou profil complet."></textarea>
+
+    <div class="composer-foot">
+      <p class="kbd-hints">
+        <kbd>Entrée</kbd> pour lancer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> pour une autre URL ·
+        glisser-déposer accepté
+      </p>
+      <div class="composer-actions">
+        <button class="btn btn-quiet" id="paste" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clipboard"/></svg>
+          <span>Coller</span>
+        </button>
+        <button class="btn btn-primary" id="submit" type="button">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg>
+          <span>Télécharger</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="drop-veil" aria-hidden="true"><span>Déposer le lien ici</span></div>
+  </section>
+
+  <!-- ----------------------------------------------------------- réglages -->
+  <div class="collapsible" id="settings-wrap">
+    <div class="collapsible-inner">
+      <section class="panel settings" id="settings" aria-label="Réglages">
+
+        <fieldset class="group">
+          <legend>Bibliothèque</legend>
+          <div class="field field-wide">
+            <label for="cfg-output">Dossier de destination</label>
+            <div class="input-row">
+              <input type="text" id="cfg-output" data-cfg="output_dir" spellcheck="false" autocomplete="off">
+              <button class="btn btn-quiet" id="open-folder" type="button" title="Ouvrir dans l'explorateur">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-folder"/></svg>
+                <span>Ouvrir</span>
+              </button>
+            </div>
+            <p class="help">Rangement en <code>artiste / playlist / 001 - titre.mp3</code>.</p>
+          </div>
+
+          <div class="field">
+            <label for="cfg-format">Format</label>
+            <select id="cfg-format" data-cfg="audio_format">
+              <option value="mp3">MP3 320 kbps (converti)</option>
+              <option value="original">Qualité d'origine, sans conversion</option>
+            </select>
+            <p class="help">SoundCloud diffuse souvent du 128 kbps : 320 est un plafond de conteneur, pas un gain réel.</p>
+          </div>
+
+          <div class="field">
+            <label for="cfg-quality">Débit du MP3</label>
+            <select id="cfg-quality" data-cfg="audio_quality">
+              <option value="320">320 kbps</option>
+              <option value="256">256 kbps</option>
+              <option value="192">192 kbps</option>
+              <option value="128">128 kbps</option>
+            </select>
+            <p class="help">Sans effet si le format est réglé sur la qualité d'origine.</p>
+          </div>
+
+          <div class="field">
+            <label for="cfg-workers">Téléchargements simultanés</label>
+            <input type="number" id="cfg-workers" data-cfg="workers" min="1" max="8">
+            <p class="help">Au-delà de 3, SoundCloud répond <code>429 Too Many Requests</code>.</p>
+          </div>
+
+          <div class="field">
+            <label for="cfg-fragments">Fragments en parallèle</label>
+            <input type="number" id="cfg-fragments" data-cfg="concurrent_fragments" min="1" max="16">
+            <p class="help">Par morceau. SoundCloud sert du HLS découpé : monter ce nombre accélère une piste isolée.</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Traitement</legend>
+          <label class="switch">
+            <input type="checkbox" data-cfg="use_archive">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">
+              Ne jamais retélécharger un morceau déjà pris
+              <em>Un journal permet de resynchroniser un profil sans tout refaire.</em>
+            </span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-cfg="parse_artist_from_title">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">
+              Déduire l'artiste des titres «&nbsp;Artiste - Titre&nbsp;»
+              <em>Utile sur YouTube, risqué sur les titres du type «&nbsp;01 - Intro&nbsp;».</em>
+            </span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" data-cfg="keep_original">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">
+              Conserver le fichier source à côté du MP3
+              <em>Double l'espace occupé.</em>
+            </span>
+          </label>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Accès</legend>
+          <div class="field">
+            <label for="cfg-cookies">Cookies du navigateur</label>
+            <select id="cfg-cookies" data-cfg="cookies_browser">
+              <option value="">Aucun</option>
+              <option value="chrome">Chrome</option>
+              <option value="firefox">Firefox</option>
+              <option value="edge">Edge</option>
+              <option value="brave">Brave</option>
+            </select>
+            <p class="help">Nécessaire pour les likes d'un compte privé ou les morceaux réservés aux abonnés. Lecture strictement locale.</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-cfg="lan_access">
+            <span class="switch-track" aria-hidden="true"></span>
+            <span class="switch-text">
+              Accessible depuis le réseau local
+              <em>Pour piloter depuis le téléphone. Redémarrage requis, et aucune authentification : réseau de confiance uniquement.</em>
+            </span>
+          </label>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Avancé</legend>
+          <div class="field field-wide">
+            <label for="cfg-ffmpeg">Chemin de ffmpeg</label>
+            <input type="text" id="cfg-ffmpeg" data-cfg="ffmpeg_location" spellcheck="false"
+                   autocomplete="off" placeholder="Vide = détection automatique">
+            <p class="help">À renseigner seulement si la détection échoue. Le dossier contenant <code>ffmpeg.exe</code> suffit.</p>
+          </div>
+          <div class="field">
+            <label for="cfg-port">Port</label>
+            <input type="number" id="cfg-port" data-cfg="port" min="1024" max="65535">
+            <p class="help">Redémarrage requis. Sous 1024, l'ouverture demanderait les droits administrateur.</p>
+          </div>
+        </fieldset>
+
+        <div class="settings-foot">
+          <button class="btn btn-primary" id="save-settings" type="button">Enregistrer</button>
+          <button class="btn btn-quiet" id="reset-settings" type="button">Valeurs par défaut</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------- file d'attente -->
+  <section class="queue" aria-labelledby="queue-title">
+    <div class="section-head">
+      <h2 id="queue-title">File d'attente</h2>
+      <span class="pill" id="queue-count" hidden></span>
+      <button class="btn btn-quiet btn-sm" id="clear" type="button" hidden>Effacer les terminés</button>
+    </div>
+
+    <div id="jobs" class="jobs"></div>
+
+    <div class="empty" id="empty">
+      <svg class="empty-mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-wave"/></svg>
+      <p class="empty-title">Rien en file</p>
+      <p class="empty-text">Colle une URL pour commencer. Sont reconnus&nbsp;:</p>
+      <ul class="url-shapes">
+        <li><code>soundcloud.com/artiste/morceau</code><span>un morceau</span></li>
+        <li><code>soundcloud.com/artiste/sets/nom</code><span>une playlist</span></li>
+        <li><code>soundcloud.com/artiste/likes</code><span>tous les likes</span></li>
+        <li><code>soundcloud.com/artiste</code><span>le profil complet</span></li>
+      </ul>
+      <p class="empty-note">YouTube, Bandcamp et Mixcloud fonctionnent aussi — le moteur est yt-dlp.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span id="foot-env"></span>
+  <span id="foot-dir" class="foot-dir"></span>
+</footer>
+
+<!-- Annonces vocales : uniquement les changements d'etat, pas la progression. -->
+<p class="sr-only" id="sr-status" role="status" aria-live="polite"></p>
+<div class="toasts" id="toasts"></div>
+
+<!-- Gabarit d'une carte de job, clone par app.js. -->
+<template id="job-template">
+  <article class="job">
+    <div class="job-head">
+      <span class="job-kind">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-track"/></svg>
+      </span>
+      <div class="job-ident">
+        <p class="job-title"></p>
+        <p class="job-sub"></p>
+      </div>
+      <span class="state"></span>
+      <button class="btn btn-icon btn-sm job-cancel" type="button" aria-label="Annuler ce téléchargement">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+
+    <div class="progress-row">
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-fill"></div>
+      </div>
+      <span class="progress-value"></span>
+    </div>
+
+    <div class="job-foot">
+      <span class="job-current"></span>
+      <span class="job-stats"></span>
+    </div>
+
+    <details class="job-errors" hidden>
+      <summary></summary>
+      <ul></ul>
+    </details>
+  </article>
+</template>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
