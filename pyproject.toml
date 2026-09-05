@@ -23,10 +23,19 @@ dependencies = [
     "yt-dlp",
     "fastapi>=0.110",
     "uvicorn>=0.27",
-    "mutagen>=1.45",
 ]
 
 [project.optional-dependencies]
+# mutagen sert a yt-dlp pour integrer la pochette dans les conteneurs m4a, mp4,
+# ogg et flac. Le chemin par defaut de SoundGrab produit du MP3, ou c'est ffmpeg
+# qui s'en charge : mutagen n'y est jamais appele, et yt-dlp retombe de toute
+# facon sur ffmpeg quand il est absent.
+#
+# C'est aussi la seule dependance sous GPL de l'arbre. La laisser obligatoire
+# ferait basculer en GPL n'importe quelle distribution figee du projet, pour une
+# fonction qui a deja une solution de repli. Elle reste donc a la demande.
+covers = ["mutagen>=1.45"]
+
 dev = [
     "pytest>=8",
     "httpx>=0.27",

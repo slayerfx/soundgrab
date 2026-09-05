@@ -20,6 +20,17 @@ python -m venv .venv
 
 Le projet s'installe en mode éditable : `soundgrab` devient aussi une commande.
 
+Une dépendance reste optionnelle. `mutagen` permet à yt-dlp d'intégrer la pochette
+dans les conteneurs `m4a`, `mp4`, `ogg` et `flac` — donc uniquement si tu utilises
+le format « qualité d'origine ». Pour du MP3, c'est ffmpeg qui s'en charge et
+`mutagen` n'est jamais appelé ; en son absence, yt-dlp retombe de toute façon sur
+ffmpeg. C'est par ailleurs la seule dépendance sous GPL, ce qui compliquerait toute
+distribution figée du projet : elle n'est donc installée qu'à la demande.
+
+```
+.venv\Scripts\python.exe -m pip install -e ".[covers]"
+```
+
 Reste **ffmpeg**, qui est obligatoire : SoundCloud sert la plupart des morceaux en
 flux HLS fragmentés, et sans ffmpeg il n'y a ni assemblage, ni conversion MP3, ni
 tags, ni pochettes.
