@@ -1,188 +1,197 @@
 # SoundGrab
 
-Téléchargeur de playlists SoundCloud avec interface web locale. Tu colles une URL,
-il récupère le morceau, la playlist ou le profil entier en MP3 320 taggé, pochette
-incluse, rangé proprement sur le disque.
+[![CI](https://github.com/slayerfx/soundgrab/actions/workflows/ci.yml/badge.svg)](https://github.com/slayerfx/soundgrab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Le moteur est [yt-dlp](https://github.com/yt-dlp/yt-dlp) : tout ce qu'il gère
-fonctionne ici, SoundCloud comme YouTube, Bandcamp ou Mixcloud.
+SoundCloud downloader with a local web interface. Paste a URL and it pulls the
+track, the playlist or the whole profile as tagged MP3 with cover art, filed
+tidily on disk.
 
-![L'interface de SoundGrab pendant le téléchargement d'une playlist : barre de progression, étape en cours et compteur de morceaux](docs/interface.png)
+The engine is [yt-dlp](https://github.com/yt-dlp/yt-dlp): anything it handles
+works here — SoundCloud, but also YouTube, Bandcamp and Mixcloud.
+
+![The SoundGrab interface while downloading a playlist: progress bar, current stage and track counter](docs/interface.png)
 
 ---
 
 ## Installation
 
-Python 3.10 ou plus récent.
+Python 3.10 or later.
 
 ```
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Le projet s'installe en mode éditable : `soundgrab` devient aussi une commande.
+That file installs the project in editable mode, so `soundgrab` also becomes a
+command.
 
-Une dépendance reste optionnelle. `mutagen` permet à yt-dlp d'intégrer la pochette
-dans les conteneurs `m4a`, `mp4`, `ogg` et `flac` — donc uniquement si tu utilises
-le format « qualité d'origine ». Pour du MP3, c'est ffmpeg qui s'en charge et
-`mutagen` n'est jamais appelé ; en son absence, yt-dlp retombe de toute façon sur
-ffmpeg. C'est par ailleurs la seule dépendance sous GPL, ce qui compliquerait toute
-distribution figée du projet : elle n'est donc installée qu'à la demande.
+### ffmpeg (required)
 
-```
-.venv\Scripts\python.exe -m pip install -e ".[covers]"
-```
-
-Reste **ffmpeg**, qui est obligatoire : SoundCloud sert la plupart des morceaux en
-flux HLS fragmentés, et sans ffmpeg il n'y a ni assemblage, ni conversion MP3, ni
-tags, ni pochettes.
+SoundCloud serves most tracks as fragmented HLS streams. Without ffmpeg there is
+no reassembly, no MP3 conversion, no tags and no cover art.
 
 ```
 winget install Gyan.FFmpeg
 ```
 
-Aucune reconnexion de session n'est nécessaire : la détection lit le `PATH` dans le
-registre Windows et inspecte les emplacements winget, elle ne dépend donc pas du
-`PATH` hérité par le processus. Le bandeau jaune en haut de l'interface disparaît
-dès que ffmpeg est trouvé.
+No need to sign out and back in: detection reads `PATH` from the Windows registry
+and inspects winget's install locations, so it does not depend on the `PATH` the
+process inherited. The warning banner at the top of the interface disappears as
+soon as ffmpeg is found.
 
-Si tu préfères ne rien installer sur le système, dépose `ffmpeg.exe` dans un dossier
-`bin/` à la racine du projet — il sera trouvé automatiquement.
+If you would rather not install anything system-wide, drop `ffmpeg.exe` into a
+`bin/` folder at the project root and it will be picked up automatically.
 
-## Lancement
+### mutagen (optional)
 
-Double-clic sur `SoundGrab.bat`, ou depuis un terminal :
+`mutagen` lets yt-dlp embed cover art into `m4a`, `mp4`, `ogg` and `flac`
+containers — so it only matters if you use the "original quality" format. For
+MP3, ffmpeg does the job and `mutagen` is never called; when it is missing,
+yt-dlp falls back to ffmpeg anyway.
+
+It is also the only GPL dependency in the tree, which would complicate any frozen
+distribution of the project. Hence: installed on request only.
+
+```
+.venv\Scripts\python.exe -m pip install -e ".[covers]"
+```
+
+## Running
+
+Double-click `SoundGrab.bat`, or from a terminal:
 
 ```
 .venv\Scripts\python.exe run.py
 ```
 
-Une fois le projet installé, `soundgrab` fait la même chose depuis n'importe où.
+Once the project is installed, `soundgrab` does the same from anywhere.
 
-Le navigateur s'ouvre sur `http://127.0.0.1:8731`. La fenêtre de console doit rester
-ouverte pendant les téléchargements.
+The browser opens on `http://127.0.0.1:8731`. The console window must stay open
+while downloads are running.
 
-## Utilisation
+## Usage
 
-Colle une URL et appuie sur Entrée. Sont acceptés :
+Paste a URL and press Enter. Accepted forms:
 
-| URL | Résultat |
+| URL | Result |
 |---|---|
-| `soundcloud.com/artiste/morceau` | un morceau |
-| `soundcloud.com/artiste/sets/playlist` | la playlist entière |
-| `soundcloud.com/artiste/tracks` | tous les morceaux de l'artiste |
-| `soundcloud.com/artiste/likes` | tous ses likes (voir Cookies) |
-| `soundcloud.com/artiste` | le profil complet |
+| `soundcloud.com/artist/track` | one track |
+| `soundcloud.com/artist/sets/playlist` | the whole playlist |
+| `soundcloud.com/artist/tracks` | every track by the artist |
+| `soundcloud.com/artist/likes` | all their likes (see Cookies) |
+| `soundcloud.com/artist` | the full profile |
 
-Plusieurs URL à la fois : une par ligne. Le glisser-déposer d'un lien depuis le
-navigateur lance le téléchargement directement.
+Several URLs at once: one per line. Dragging a link from the browser starts the
+download straight away.
 
-### L'interface
+### The interface
 
-Elle tient en trois fichiers servis tels quels — pas de framework, pas d'étape de
-build, pas de police ni de script chargés depuis un CDN. L'outil s'affiche donc
-correctement même sans connexion.
+It is three files served as-is — no framework, no build step, no font or script
+loaded from a CDN. The tool therefore renders correctly with no connection.
 
-- **Progression en direct.** Le serveur pousse son état par [SSE](https://developer.mozilla.org/fr/docs/Web/API/Server-sent_events)
-  et n'émet que lorsque quelque chose a bougé. Chaque carte montre l'étape en cours
-  (analyse, téléchargement, conversion, pochette), le morceau traité, le débit et le
-  temps restant. La progression est reprise dans le titre de l'onglet, lisible sans
-  revenir sur la page.
-- **Thème clair et sombre**, calé par défaut sur le réglage du système, forçable
-  dans un sens ou dans l'autre et mémorisé d'une session à l'autre.
-- **Clavier et glisser-déposer.** `Entrée` lance, `Maj+Entrée` ajoute une ligne,
-  `Échap` referme les réglages ; un lien déposé depuis le navigateur part
-  directement.
-- **Accessibilité.** Les changements d'état sont annoncés aux lecteurs d'écran, mais
-  pas la progression — l'annoncer noierait l'utilisateur sous des centaines de
-  messages. Les barres portent `role="progressbar"`, le panneau replié est `inert`,
-  et les animations disparaissent si le système demande à les réduire.
-- **Reprise automatique.** Si le serveur s'arrête, une pastille « reconnexion »
-  apparaît et le flux se rétablit seul au retour.
+- **Live progress.** The server pushes its state over
+  [SSE](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) and
+  only emits when something actually moved. Each card shows the current stage
+  (probing, downloading, converting, cover art), the track being handled, the
+  speed and the time left. Progress is mirrored in the tab title, readable
+  without coming back to the page.
+- **Light and dark themes**, following the system setting by default, forceable
+  either way and remembered between sessions.
+- **Keyboard and drag-and-drop.** `Enter` starts, `Shift+Enter` adds a line,
+  `Escape` closes the settings panel; a link dropped from the browser goes
+  straight through.
+- **Accessibility.** State changes are announced to screen readers, but progress
+  is not — announcing it would drown the user under hundreds of messages. Bars
+  carry `role="progressbar"`, the collapsed panel is `inert`, and animations
+  disappear when the system asks for reduced motion.
+- **Automatic recovery.** If the server stops, a "reconnecting" chip appears and
+  the stream picks itself back up on return.
 
-### Autres plateformes
+### Other platforms
 
-YouTube, YouTube Music, Bandcamp et Mixcloud fonctionnent sans réglage particulier,
-playlists comprises. Deux différences à connaître sur YouTube :
+YouTube, YouTube Music, Bandcamp and Mixcloud work with no particular setup,
+playlists included. Two differences worth knowing about YouTube:
 
-- **Le son est meilleur que sur SoundCloud** : Opus autour de 150 kbps, contre 128
-  côté SoundCloud.
-- **Les tags sont pauvres.** Une vidéo ordinaire n'expose ni artiste, ni titre, ni
-  album : yt-dlp retombe sur le nom de la chaîne comme artiste, et les fichiers se
-  rangent donc sous ce nom. L'option « Déduire l'artiste du titre » est bien plus
-  utile ici que sur SoundCloud, la plupart des titres étant au format
-  `Artiste - Titre`. Les liens **YouTube Music**, eux, renseignent correctement
-  artiste, titre et album.
+- **The audio is better than SoundCloud's**: Opus around 150 kbps against 128 on
+  the SoundCloud side.
+- **The tags are poor.** An ordinary video exposes neither artist, nor title, nor
+  album: yt-dlp falls back to the channel name as the artist, and files end up
+  filed under it. The "Infer artist from title" option is far more useful here
+  than on SoundCloud, most titles following the `Artist - Title` shape.
+  **YouTube Music** links, on the other hand, fill artist, title and album
+  correctly.
 
-Les miniatures YouTube étant en 16:9, elles sont recadrées au centre en carré avant
-d'être intégrées, sans quoi la jaquette s'afficherait en rectangle dans les lecteurs
-et les logiciels DJ.
+YouTube thumbnails being 16:9, they are centre-cropped to a square before being
+embedded — otherwise the cover shows up as a rectangle in players and DJ
+software.
 
-## Rangement des fichiers
+## How files are filed
 
 ```
-Musique\SoundGrab\
-  Artiste\
-    Nom de la playlist\
-      001 - Premier morceau.mp3
-      002 - Deuxième morceau.mp3
-    Morceau hors playlist.mp3
+Music\SoundGrab\
+  Artist\
+    Playlist name\
+      001 - First track.mp3
+      002 - Second track.mp3
+    Track outside any playlist.mp3
 ```
 
-Le numéro de piste conserve l'ordre de la playlist, ce qui évite que les logiciels
-DJ mélangent tout par ordre alphabétique.
+The track number preserves the playlist order, which stops DJ software from
+shuffling everything alphabetically.
 
-## Réglages
+## Settings
 
-Accessibles par le bouton **Réglages**, stockés dans `data/config.json`.
+Reachable through the **Settings** button, stored in `data/config.json`.
 
-- **Dossier de destination** — racine de la bibliothèque.
-- **Format** — MP3 320 kbps, ou flux d'origine sans réencodage. À noter : SoundCloud
-  ne diffuse souvent que du 128 kbps, donc 320 est un plafond de conteneur, pas un
-  gain de qualité réel. La qualité d'origine n'est disponible que si l'artiste a
-  activé le téléchargement sur son morceau.
-- **Débit du MP3** — 320 kbps par défaut. Sans effet si le format est réglé sur la
-  qualité d'origine ; le champ se grise alors.
-- **Téléchargements simultanés** — 2 par défaut. Au-delà de 3, SoundCloud commence
-  à répondre `429 Too Many Requests`. Baisser cette valeur ne coupe pas les
-  téléchargements en cours : les workers en trop se retirent une fois leur job fini.
-- **Fragments en parallèle** — s'applique à l'intérieur d'un même morceau. SoundCloud
-  sert du HLS découpé : monter ce nombre accélère une piste isolée, là où les
-  téléchargements simultanés accélèrent une playlist.
-- **Ne jamais retélécharger** — un journal (`data/archive.txt`) mémorise chaque
-  morceau déjà pris. Relancer une playlist ne récupère donc que les nouveautés :
-  c'est ce qui permet de resynchroniser un profil chaque semaine sans tout refaire.
-- **Déduire l'artiste du titre** — découpe les titres du type `Artiste - Titre` pour
-  remplir correctement le tag artiste. Désactivé par défaut, car un titre du type
-  `01 - Intro` serait mal interprété.
-- **Cookies du navigateur** — nécessaire pour les likes d'un compte privé ou les
-  morceaux réservés aux abonnés. Lit les cookies du navigateur choisi, en local.
-- **Accessible depuis le réseau local** — expose l'interface sur `0.0.0.0` pour la
-  piloter depuis le téléphone. Demande un redémarrage, et une règle de pare-feu
-  Windows sur le port choisi. Voir la section **Exposition réseau** plus bas.
-- **Chemin de ffmpeg** — à ne renseigner que si la détection automatique échoue.
-  Le dossier contenant `ffmpeg.exe` suffit, le chemin du binaire est accepté aussi.
-- **Port** — 8731 par défaut. Redémarrage requis. Sous 1024, l'ouverture du port
-  demanderait les droits administrateur.
+- **Destination folder** — the library root.
+- **Format** — MP3 320 kbps, or the original stream with no re-encoding. Worth
+  noting: SoundCloud often only serves 128 kbps, so 320 is a container ceiling,
+  not a real quality gain. Original quality is only available when the artist
+  enabled downloads on the track.
+- **MP3 bitrate** — 320 kbps by default. No effect when the format is set to
+  original quality; the field greys out.
+- **Simultaneous downloads** — 2 by default. Past 3, SoundCloud starts answering
+  `429 Too Many Requests`. Lowering this does not cut running downloads: surplus
+  workers retire once their current job is done.
+- **Parallel fragments** — applies inside a single track. SoundCloud serves
+  chunked HLS: raising this speeds up an isolated track, where simultaneous
+  downloads speed up a playlist.
+- **Never re-download** — a log (`data/archive.txt`) remembers every track
+  already taken. Re-running a playlist therefore only fetches what is new: this
+  is what makes it possible to resync a profile every week without redoing
+  everything.
+- **Infer artist from title** — splits `Artist - Title` shaped titles to fill the
+  artist tag properly. Off by default, because a title like `01 - Intro` would be
+  misread.
+- **Browser cookies** — needed for the likes of a private account or
+  subscriber-only tracks. Reads the chosen browser's cookies, locally.
+- **Reachable from the local network** — exposes the interface on `0.0.0.0` so you
+  can drive it from a phone. Requires a restart, and a Windows firewall rule on
+  the chosen port. See **Network exposure** below.
+- **ffmpeg path** — only worth filling in when automatic detection fails. The
+  folder containing `ffmpeg.exe` is enough; the path to the binary works too.
+- **Port** — 8731 by default. Restart required. Below 1024, opening the port would
+  need administrator rights.
 
-## Exposition réseau
+## Network exposure
 
-Sans `lan_access`, SoundGrab n'écoute que sur `127.0.0.1` : rien ne sort de la
-machine. Deux protections s'appliquent malgré tout.
+Without `lan_access`, SoundGrab only listens on `127.0.0.1`: nothing leaves the
+machine. Two protections apply regardless.
 
-**En-tête `Host` validé.** Un site web peut faire pointer son propre domaine vers
-`127.0.0.1` — c'est le *DNS rebinding* — pour que ses scripts soient considérés
-comme de la même origine que SoundGrab et pilotent l'API. Sa requête se présente
-alors avec son domaine dans l'en-tête `Host`, seul indice qui le trahit : tout
-`Host` qui n'est pas une adresse IP locale est refusé.
+**Validated `Host` header.** A website can point its own domain at `127.0.0.1` —
+this is *DNS rebinding* — so that its scripts count as the same origin as
+SoundGrab and can drive the API. Its request then carries its own domain in the
+`Host` header, the only thing that gives it away: any `Host` that is not a local
+IP address is refused.
 
-**Actions réservées à la machine hôte.** Avec `lan_access`, l'API n'a aucune
-authentification. Un client du réseau peut consulter la file et y ajouter des URL,
-mais ni modifier la configuration ni ouvrir l'explorateur : laisser réécrire
-`output_dir` depuis le réseau reviendrait à offrir une écriture arbitraire sur le
-disque. Cela reste une machine ouverte sur un réseau — à n'activer qu'en confiance.
+**Host-machine-only actions.** With `lan_access`, the API has no authentication.
+A client on the network can watch the queue and add URLs to it, but neither
+change the configuration nor open the file explorer: letting `output_dir` be
+rewritten from the network would amount to handing out arbitrary writes to the
+disk. It remains a machine open on a network — only enable it on one you trust.
 
-## Développement
+## Development
 
 ```
 .venv\Scripts\python.exe -m pip install -e ".[dev]"
@@ -190,67 +199,71 @@ disque. Cela reste une machine ouverte sur un réseau — à n'activer qu'en con
 .venv\Scripts\python.exe -m ruff check .
 ```
 
-Les tests couvrent `jobs.py` et `config.py` — état partagé, verrous, bornes,
-persistance — plus les gardes d'entrée de l'API. Aucun ne touche au réseau ni à
-ffmpeg, et une fixture `autouse` redirige la configuration vers un dossier
-temporaire : lancer la suite ne peut pas écraser tes réglages.
+The tests cover `jobs.py` and `config.py` — shared state, locks, bounds,
+persistence — plus the API's input guards. None of them touch the network or
+ffmpeg, and an `autouse` fixture redirects the configuration to a temporary
+folder: running the suite cannot overwrite your settings.
 
-La CI rejoue lint et tests sur Windows et Linux, en Python 3.10 et 3.13.
+CI replays lint and tests on Windows and Linux, on Python 3.10 and 3.13.
 
-## Dépannage
+## Troubleshooting
 
-**`429 Too Many Requests`** — baisse les téléchargements simultanés à 1 et attends
-quelques minutes. SoundCloud limite par adresse IP.
+Every failure is reported with its actual cause, and the raw yt-dlp message stays
+available in the card's expandable "problems" list.
 
-**« URL non reconnue, morceau privé ou supprimé »** — le morceau est privé,
-géo-bloqué, ou retiré. Pour un contenu privé auquel ton compte a accès, renseigne
-les cookies du navigateur dans les réglages.
+| Message | What to do |
+|---|---|
+| Server unreachable | Check the network connection, or a proxy standing in the way. |
+| Not found | The track was removed, or the URL is wrong. |
+| Access denied | Private or subscriber-only content: fill in browser cookies in the settings. |
+| SoundCloud is rate limiting | Drop simultaneous downloads to 1 and wait a few minutes. The limit is per IP address. |
+| Unsupported URL | The site is not handled by yt-dlp. |
+| Content blocked in this country | Geo-restricted track. |
 
-**Un morceau échoue au milieu d'une playlist** — le reste continue quand même. Le
-détail est dans la liste dépliable « problèmes » de la carte du job.
+**A track fails in the middle of a playlist** — the rest carries on regardless.
+The detail sits in the card's expandable "problems" list.
 
-**yt-dlp ne reconnaît plus SoundCloud** — le site change régulièrement. Mets à jour :
+**yt-dlp no longer recognises SoundCloud** — the site changes regularly. Update:
 
 ```
 .venv\Scripts\python.exe -m pip install --upgrade yt-dlp
 ```
 
-## Cadre d'usage
+## Scope of use
 
-SoundCloud autorise le téléchargement quand l'artiste l'active sur son morceau, et
-une large part du catalogue est sous licence Creative Commons. Au-delà, le
-téléchargement relève des conditions d'utilisation du site et du droit d'auteur
-applicable. L'outil ne contourne aucune protection : il utilise les mêmes flux que
-le lecteur web.
+SoundCloud allows downloading when the artist enables it on their track, and a
+large share of the catalogue is under a Creative Commons licence. Beyond that,
+downloading falls under the site's terms of use and the applicable copyright law.
+The tool circumvents no protection: it uses the same streams as the web player.
 
-## Structure
+## Layout
 
 ```
-run.py                  lanceur pour un double-clic
-pyproject.toml          métadonnées, dépendances, config ruff et pytest
+run.py                  launcher for a double-click
+pyproject.toml          metadata, dependencies, ruff and pytest config
 soundgrab/
-  cli.py                démarrage du serveur, ouverture du navigateur
-  config.py             réglages persistants, bornes, détection de ffmpeg
-  jobs.py               état des jobs, protégé par verrou, versionné pour le SSE
-  downloader.py         file d'attente, workers, intégration yt-dlp
-  server.py             API FastAPI, flux d'événements, gardes réseau
+  cli.py                server startup, opens the browser
+  config.py             persistent settings, bounds, ffmpeg detection
+  jobs.py               job state, lock-protected, versioned for SSE
+  downloader.py         queue, workers, yt-dlp integration
+  server.py             FastAPI API, event stream, network guards
   web/
-    index.html          structure, jeu d'icônes SVG, gabarit des cartes
-    style.css           thèmes clair/sombre, mise en page
-    app.js              rendu des jobs, réglages, flux SSE
+    index.html          structure, SVG icon set, card template
+    style.css           light/dark themes, layout
+    app.js              job rendering, settings, SSE stream
     favicon.svg
 docs/
-  interface.png         capture utilisée par ce README
+  interface.png         screenshot used by this README
 tests/
-  conftest.py           isolation de la configuration
-  test_jobs.py          état partagé, annulation, bornes, concurrence
-  test_config.py        persistance, clés inconnues, détection de ffmpeg
-  test_api.py           validation des entrées, gardes réseau
-data/                   (ignoré par git)
-  config.json           réglages
-  archive.txt           journal des morceaux déjà téléchargés
+  conftest.py           configuration isolation
+  test_jobs.py          shared state, cancellation, bounds, concurrency
+  test_config.py        persistence, unknown keys, ffmpeg detection
+  test_api.py           input validation, network guards
+data/                   (git-ignored)
+  config.json           settings
+  archive.txt           log of tracks already downloaded
 ```
 
 ## Licence
 
-MIT, voir [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
