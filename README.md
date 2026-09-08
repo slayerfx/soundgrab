@@ -12,7 +12,6 @@ works here — SoundCloud, but also YouTube, Bandcamp and Mixcloud.
 
 ![The SoundGrab interface while downloading a playlist: progress bar, current stage and track counter](docs/interface.png)
 
-
 ## Installation
 
 Python 3.10 or later.
