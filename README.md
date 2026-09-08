@@ -7,6 +7,8 @@ incluse, rangé proprement sur le disque.
 Le moteur est [yt-dlp](https://github.com/yt-dlp/yt-dlp) : tout ce qu'il gère
 fonctionne ici, SoundCloud comme YouTube, Bandcamp ou Mixcloud.
 
+![L'interface de SoundGrab pendant le téléchargement d'une playlist : barre de progression, étape en cours et compteur de morceaux](docs/interface.png)
+
 ---
 
 ## Installation
@@ -237,6 +239,8 @@ soundgrab/
     style.css           thèmes clair/sombre, mise en page
     app.js              rendu des jobs, réglages, flux SSE
     favicon.svg
+docs/
+  interface.png         capture utilisée par ce README
 tests/
   conftest.py           isolation de la configuration
   test_jobs.py          état partagé, annulation, bornes, concurrence
