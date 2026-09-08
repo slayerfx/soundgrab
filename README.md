@@ -8,7 +8,8 @@ track, the playlist or the whole profile as tagged MP3 with cover art, filed
 tidily on disk.
 
 The engine is [yt-dlp](https://github.com/yt-dlp/yt-dlp): anything it handles
-works here — SoundCloud, but also YouTube, Bandcamp and Mixcloud.
+works here — SoundCloud, but also YouTube, Bandcamp and Mixcloud. The interface
+itself is in French.
 
 ![The SoundGrab interface while downloading a playlist: progress bar, current stage and track counter](docs/interface.png)
 
